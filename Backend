@@ -1,0 +1,40 @@
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+import string
+
+@csrf_exempt  # Disable CSRF for simplicity; in production, use proper authentication
+def bfhl(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            
+            full_name = data.get("full_name", "")
+            dob = data.get("dob", "")
+            email = data.get("email", "")
+            roll_number = data.get("roll_number", "")
+            user_id = f"{full_name}_{dob}"
+            input_data = data.get("data", [])
+            
+            numbers = [item for item in input_data if item.isdigit()]
+            alphabets = [item for item in input_data if item.isalpha()]
+            highest_alphabet = [max(alphabets, key=str.upper)] if alphabets else []
+            
+            response_data = {
+                "is_success": True,
+                "user_id": user_id,
+                "email": email,
+                "roll_number": roll_number,
+                "numbers": numbers,
+                "alphabets": alphabets,
+                "highest_alphabet": highest_alphabet
+            }
+        except json.JSONDecodeError:
+            response_data = {"is_success": False, "message": "Invalid JSON format"}
+        
+        return JsonResponse(response_data)
+    
+    elif request.method == "GET":
+        return JsonResponse({"operation_code": 1}, status=200)
+    
+    return JsonResponse({"is_success": False, "message": "Invalid request method"}, status=400)
