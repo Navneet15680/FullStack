@@ -1,0 +1,73 @@
+import { useState } from "react";
+import { Select, Input, Button, Card } from "@/components/ui";
+
+export default function App() {
+  const [jsonInput, setJsonInput] = useState("");
+  const [error, setError] = useState(null);
+  const [response, setResponse] = useState(null);
+  const [selectedFilters, setSelectedFilters] = useState([]);
+
+  const handleSubmit = async () => {
+    try {
+      const parsedData = JSON.parse(jsonInput);
+      if (!parsedData.data) throw new Error("Invalid JSON format");
+      
+      const res = await fetch("http://localhost:8000/bfhl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsedData),
+      });
+      
+      const result = await res.json();
+      setResponse(result);
+      setError(null);
+    } catch (err) {
+      setError("Invalid JSON Input");
+    }
+  };
+
+  const filterResponse = () => {
+    if (!response) return {};
+    const filteredData = {};
+    if (selectedFilters.includes("alphabets")) filteredData["Alphabets"] = response.alphabets;
+    if (selectedFilters.includes("numbers")) filteredData["Numbers"] = response.numbers;
+    if (selectedFilters.includes("highest_alphabet")) filteredData["Highest Alphabet"] = response.highest_alphabet;
+    return filteredData;
+  };
+
+  return (
+    <div className="p-4 max-w-lg mx-auto">
+      <h1 className="text-xl font-bold">ABCD123</h1>
+      <label className="block font-medium mt-4">API Input</label>
+      <Input
+        className="w-full border p-2 mt-1"
+        placeholder='{"data": ["A","C","z"]}'
+        value={jsonInput}
+        onChange={(e) => setJsonInput(e.target.value)}
+      />
+      {error && <p className="text-red-500">{error}</p>}
+      <Button className="mt-2 w-full bg-blue-600 text-white" onClick={handleSubmit}>Submit</Button>
+      
+      {response && (
+        <>
+          <label className="block font-medium mt-4">Multi Filter</label>
+          <Select
+            multiple
+            options={[{label: "Alphabets", value: "alphabets"}, {label: "Numbers", value: "numbers"}, {label: "Highest Alphabet", value: "highest_alphabet"}]}
+            value={selectedFilters}
+            onChange={setSelectedFilters}
+            className="mt-1"
+          />
+          <Card className="p-4 mt-4">
+            <h2 className="font-bold">Filtered Response</h2>
+            {Object.entries(filterResponse()).map(([key, value]) => (
+              <p key={key} className="mt-2">
+                <span className="font-medium">{key}:</span> {value.join(", ")}
+              </p>
+            ))}
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
